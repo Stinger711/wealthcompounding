@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wealth through Continuous Compounding — Strategy Calculator</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  :root {
+    --navy: #132347;
+    --navy-light: #1D3766;
+    --gold: #C9A227;
+    --gold-light: #F6EDCF;
+    --emerald: #1E7A46;
+    --emerald-light: #E7F3EC;
+    --purple: #4a3aa7;
+    --purple-light: #ECEAF9;
+    --grey: #6B7280;
+    --text-dark: #1B1F2E;
+    --border: #E3E6EE;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: Calibri, Arial, sans-serif;
+    background: #FFFFFF;
+    color: var(--text-dark);
+    margin: 0;
+    padding: 24px;
+    max-width: 1140px;
+    margin: 0 auto;
+  }
+  h1 {
+    font-family: Cambria, Georgia, serif;
+    color: var(--navy);
+    font-size: 26px;
+    margin: 0 0 4px;
+  }
+  .subtitle { color: var(--grey); font-style: italic; font-size: 14px; margin: 0 0 24px; }
+  .layout { display: grid; grid-template-columns: 320px 1fr; gap: 24px; align-items: start; }
+  @media (max-width: 760px) { .layout { grid-template-columns: 1fr; } }
+  .panel {
+    background: #F7F8FB;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+  }
+  .panel h2 { font-size: 15px; color: var(--navy); margin: 0 0 16px; font-family: Cambria, Georgia, serif; }
+  .field { margin-bottom: 18px; }
+  .field label {
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-size: 13px; font-weight: bold; color: var(--text-dark); margin-bottom: 6px;
+  }
+  .field label span.val { color: var(--navy); font-weight: bold; }
+  .field input[type=range] { width: 100%; accent-color: var(--navy); }
+  .hint {
+    font-size: 11px; color: var(--grey); font-style: italic; line-height: 1.4;
+    margin-top: 6px;
+  }
+  .advanced-toggle {
+    font-size: 12px; color: var(--navy); cursor: pointer; text-decoration: underline;
+    background: none; border: none; padding: 0; margin-top: 4px; font-family: inherit;
+  }
+  .advanced { display: none; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); }
+  .advanced.show { display: block; }
+  .horizon-group { display: flex; gap: 6px; }
+  .horizon-btn {
+    flex: 1; padding: 12px 0; min-height: 44px; text-align: center; font-size: 13px; font-weight: bold;
+    border: 1px solid var(--border); border-radius: 6px; background: #FFFFFF;
+    color: var(--text-dark); cursor: pointer; font-family: inherit;
+  }
+  .horizon-btn.active { background: var(--navy); border-color: var(--navy); color: #FFFFFF; }
+  .stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
+  @media (max-width: 900px) { .stat-row { grid-template-columns: repeat(2, 1fr); } }
+  .stat-card { border-radius: 10px; padding: 12px; }
+  .stat-card .label { font-size: 10px; font-weight: bold; letter-spacing: 0.3px; margin-bottom: 6px; }
+  .stat-card .value { font-family: Cambria, Georgia, serif; font-weight: bold; font-size: 18px; }
+  .stat-card .sub { font-size: 10px; margin-top: 4px; }
+  .sc-purple { background: var(--purple-light); }
+  .sc-purple .label, .sc-purple .value { color: var(--purple); }
+  .sc-purple .sub { color: #6d5fc4; }
+  .sc-blue { background: #E6F1FB; }
+  .sc-blue .label, .sc-blue .value { color: #185FA5; }
+  .sc-blue .sub { color: #378ADD; }
+  .sc-amber { background: var(--gold-light); }
+  .sc-amber .label, .sc-amber .value { color: #8A6B14; }
+  .sc-amber .sub { color: #a3841f; }
+  .sc-green { background: var(--emerald-light); }
+  .sc-green .label, .sc-green .value { color: var(--emerald); }
+  .sc-green .sub { color: #3D6B52; }
+  .chart-wrap { position: relative; height: 380px; margin-bottom: 8px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 10px; font-size: 12.5px; color: var(--text-dark); margin-bottom: 20px; }
+  .legend label {
+    display: flex; align-items: center; gap: 8px; cursor: pointer;
+    padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; min-height: 44px;
+  }
+  .legend input[type=checkbox] { width: 20px; height: 20px; cursor: pointer; flex-shrink: 0; accent-color: var(--navy); }
+  .swatch { width: 11px; height: 11px; border-radius: 2px; display: inline-block; }
+  .note {
+    font-size: 11.5px; color: var(--grey); font-style: italic; line-height: 1.5;
+    border-top: 1px solid var(--border); padding-top: 14px; margin-top: 8px;
+  }
+</style>
+</head>
+<body>
+
+<h1>Wealth through Continuous Compounding — Strategy Calculator</h1>
+<p class="subtitle">Adjust the assumptions to see how the strategies compare over time. All figures are illustrative.</p>
+
+<div class="layout">
+  <div class="panel">
+    <h2>Your assumptions</h2>
+
+    <div class="field">
+      <label>Current portfolio value <span class="val" id="portfolioValOut">$1,000,000</span></label>
+      <input type="range" id="portfolioVal" min="100000" max="10000000" step="50000" value="1000000">
+    </div>
+
+    <div class="field">
+      <label>Expected return (% p.a.) <span class="val" id="returnOut">15%</span></label>
+      <input type="range" id="returnPct" min="0" max="25" step="0.5" value="15">
+      <div class="hint">Historical guidance only, not a forecast: global equities have long-run averaged roughly 8–10% p.a. nominal; US large-cap (e.g. S&amp;P 500) roughly 10% p.a. nominal since the 1920s. Past performance does not guarantee future returns.</div>
+    </div>
+
+    <div class="field">
+      <label>Facility interest rate (% p.a.) <span class="val" id="interestOut">2%</span></label>
+      <input type="range" id="interestPct" min="0" max="15" step="0.25" value="2">
+    </div>
+
+    <div class="field">
+      <label>Loan facility (% of portfolio) <span class="val" id="loanPctOut">50%</span></label>
+      <input type="range" id="loanPct" min="0" max="80" step="5" value="50">
+    </div>
+
+    <div class="field">
+      <label>Time horizon</label>
+      <div class="horizon-group" id="horizonGroup">
+        <button type="button" class="horizon-btn" data-years="5">5y</button>
+        <button type="button" class="horizon-btn" data-years="10">10y</button>
+        <button type="button" class="horizon-btn active" data-years="15">15y</button>
+        <button type="button" class="horizon-btn" data-years="20">20y</button>
+      </div>
+    </div>
+
+    <button class="advanced-toggle" id="advToggle">Show advanced settings</button>
+    <div class="advanced" id="advancedPanel">
+      <div class="field">
+        <label>Annual income drawn (% of initial portfolio) <span class="val" id="drawPctOut">5%</span></label>
+        <input type="range" id="drawPct" min="1" max="10" step="0.5" value="5">
+        <div class="hint">Monthly income: <span class="val" id="monthlyIncomeOut" style="color: var(--navy);">$0</span> (annual: <span id="annualIncomeOut">$0</span>)</div>
+      </div>
+      <div class="field">
+        <label>Illustrative tax drag on sales (%) <span class="val" id="taxPctOut">15%</span></label>
+        <input type="range" id="taxPct" min="0" max="35" step="1" value="15">
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="stat-row">
+      <div class="stat-card sc-purple">
+        <div class="label">CAPITALIZE &amp; DRAW (TAXABLE)</div>
+        <div class="value" id="statLeveraged">$0</div>
+        <div class="sub" id="statLeveragedSub">Year 15 net worth</div>
+      </div>
+      <div class="stat-card sc-blue">
+        <div class="label">BORROW FOR INCOME (NO TAX*)</div>
+        <div class="value" id="statBorrow">$0</div>
+        <div class="sub" id="statBorrowSub">Year 15 net worth</div>
+      </div>
+      <div class="stat-card sc-amber">
+        <div class="label">SELL DOWN</div>
+        <div class="value" id="statSell">$0</div>
+        <div class="sub" id="statSellSub">Year 15 net worth, after tax drag</div>
+      </div>
+      <div class="stat-card sc-green">
+        <div class="label">STANDARD PORTFOLIO</div>
+        <div class="value" id="statStandard">$0</div>
+        <div class="sub" id="statStandardSub">Year 15, no loan or drawdown</div>
+      </div>
+    </div>
+
+    <p style="font-size: 11.5px; color: var(--grey); margin: 0 0 10px;">All lines show <strong>net portfolio value</strong> — portfolio assets minus any outstanding loan balance (principal plus compounded interest to date). "Capitalize &amp; draw" and "Borrow for income" both carry a loan; "Sell down" and "Standard portfolio" do not.</p>
+    <div class="chart-wrap"><canvas id="mainChart" role="img" aria-label="Line chart comparing net portfolio value, after deducting any compounded loan balance, over time for four strategies based on user-entered assumptions"></canvas></div>
+    <div class="legend">
+      <label><span class="swatch" style="background:#4a3aa7"></span>Capitalize &amp; draw (taxable)<input type="checkbox" data-idx="0" checked></label>
+      <label><span class="swatch" style="background:#2a78d6"></span>Borrow for income (no tax*)<input type="checkbox" data-idx="1" checked></label>
+      <label><span class="swatch" style="background:#eda100"></span>Sell down (after tax drag)<input type="checkbox" data-idx="2" checked></label>
+      <label><span class="swatch" style="background:#1baf7a"></span>Standard portfolio (no loan/drawdown)<input type="checkbox" data-idx="3" checked></label>
+    </div>
+
+    <p class="note">*Whether loan proceeds are treated as taxable income depends on the client's individual tax position and jurisdiction — this is not a blanket guarantee of tax-free treatment, and should be confirmed with a tax advisor. This tool is for illustrative discussion purposes only. It assumes a constant annual return and a constant facility rate for the full period, which real markets and lenders do not provide — actual outcomes will differ, and leverage increases downside risk as well as upside. The historical return guidance above reflects long-run averages, not a promised or expected result for any specific portfolio. It is not a forecast, quote, or guarantee, and not financial, tax, or legal advice.</p>
+  </div>
+</div>
+
+<script>
+function fmtMoney(v) {
+  return '$' + Math.round(v).toLocaleString();
+}
+function fmtMoneyShort(v) {
+  if (Math.abs(v) >= 1000000) return '$' + (v/1000000).toFixed(1) + 'M';
+  return '$' + Math.round(v/1000).toLocaleString() + 'K';
+}
+
+const els = {
+  portfolioVal: document.getElementById('portfolioVal'),
+  returnPct: document.getElementById('returnPct'),
+  interestPct: document.getElementById('interestPct'),
+  loanPct: document.getElementById('loanPct'),
+  drawPct: document.getElementById('drawPct'),
+  taxPct: document.getElementById('taxPct'),
+};
+
+const outs = {
+  portfolioVal: document.getElementById('portfolioValOut'),
+  returnPct: document.getElementById('returnOut'),
+  interestPct: document.getElementById('interestOut'),
+  loanPct: document.getElementById('loanPctOut'),
+  drawPct: document.getElementById('drawPctOut'),
+  taxPct: document.getElementById('taxPctOut'),
+};
+
+const monthlyIncomeOut = document.getElementById('monthlyIncomeOut');
+const annualIncomeOut = document.getElementById('annualIncomeOut');
+
+let chart;
+let horizonYears = 15;
+
+function compute() {
+  const P0 = parseFloat(els.portfolioVal.value);
+  const r = parseFloat(els.returnPct.value) / 100;
+  const i = parseFloat(els.interestPct.value) / 100;
+  const loanPct = parseFloat(els.loanPct.value) / 100;
+  const drawPct = parseFloat(els.drawPct.value) / 100;
+  const taxPct = parseFloat(els.taxPct.value) / 100;
+
+  const draw = P0 * drawPct;
+  const facility = P0 * loanPct;
+  const grossW = taxPct < 1 ? draw / (1 - taxPct) : draw;
+
+  const years = [];
+  const leveraged = [];
+  const borrow = [];
+  const sellDown = [];
+  const standard = [];
+
+  let borrowLoan = 0;
+  let leveragedLoan = facility;
+  let sellPort = P0;
+  let leveragedPort = P0 + facility;
+
+  years.push(0); leveraged.push(P0); borrow.push(P0); sellDown.push(P0); standard.push(P0);
+
+  for (let y = 1; y <= horizonYears; y++) {
+    const borrowPort = P0 * Math.pow(1 + r, y);
+    borrowLoan = borrowLoan * (1 + i) + draw;
+
+    sellPort = Math.max(0, (sellPort - grossW)) * (1 + r);
+
+    leveragedLoan = facility * Math.pow(1 + i, y);
+    leveragedPort = Math.max(0, (leveragedPort - grossW)) * (1 + r);
+
+    const standardPort = P0 * Math.pow(1 + r, y);
+
+    years.push(y);
+    borrow.push(borrowPort - borrowLoan);
+    sellDown.push(sellPort);
+    leveraged.push(leveragedPort - leveragedLoan);
+    standard.push(standardPort);
+  }
+
+  return { years, leveraged, borrow, sellDown, standard };
+}
+
+function render() {
+  outs.portfolioVal.textContent = fmtMoney(els.portfolioVal.value);
+  outs.returnPct.textContent = els.returnPct.value + '%';
+  outs.interestPct.textContent = els.interestPct.value + '%';
+  outs.loanPct.textContent = els.loanPct.value + '%';
+  outs.drawPct.textContent = els.drawPct.value + '%';
+  outs.taxPct.textContent = els.taxPct.value + '%';
+
+  const P0now = parseFloat(els.portfolioVal.value);
+  const drawPctNow = parseFloat(els.drawPct.value) / 100;
+  const annualIncome = P0now * drawPctNow;
+  monthlyIncomeOut.textContent = fmtMoney(annualIncome / 12) + ' /mo';
+  annualIncomeOut.textContent = fmtMoney(annualIncome) + ' /yr';
+
+  const data = compute();
+  const lastIdx = horizonYears;
+
+  document.getElementById('statLeveraged').textContent = fmtMoney(data.leveraged[lastIdx]);
+  document.getElementById('statBorrow').textContent = fmtMoney(data.borrow[lastIdx]);
+  document.getElementById('statSell').textContent = fmtMoney(data.sellDown[lastIdx]);
+  document.getElementById('statStandard').textContent = fmtMoney(data.standard[lastIdx]);
+
+  document.getElementById('statLeveragedSub').textContent = 'Year ' + horizonYears + ' — net of loan';
+  document.getElementById('statBorrowSub').textContent = 'Year ' + horizonYears + ' — net of loan';
+  document.getElementById('statSellSub').textContent = 'Year ' + horizonYears + ' net worth, after tax drag';
+  document.getElementById('statStandardSub').textContent = 'Year ' + horizonYears + ', no loan or drawdown';
+
+  if (chart) {
+    chart.data.labels = data.years;
+    chart.data.datasets[0].data = data.leveraged;
+    chart.data.datasets[1].data = data.borrow;
+    chart.data.datasets[2].data = data.sellDown;
+    chart.data.datasets[3].data = data.standard;
+    chart.update();
+  } else {
+    chart = new Chart(document.getElementById('mainChart'), {
+      type: 'line',
+      data: {
+        labels: data.years,
+        datasets: [
+          { label: 'Capitalize & draw (taxable)', data: data.leveraged, borderColor: '#4a3aa7', backgroundColor: '#4a3aa7', borderWidth: 2.5, pointRadius: 2.5, tension: 0.15, hidden: false },
+          { label: 'Borrow for income (no tax*)', data: data.borrow, borderColor: '#2a78d6', backgroundColor: '#2a78d6', borderWidth: 2, pointRadius: 2, tension: 0.15, hidden: false },
+          { label: 'Sell down (after tax)', data: data.sellDown, borderColor: '#eda100', backgroundColor: '#eda100', borderDash: [4, 3], borderWidth: 2, pointRadius: 2, tension: 0.15, hidden: false },
+          { label: 'Standard portfolio (no loan/drawdown)', data: data.standard, borderColor: '#1baf7a', backgroundColor: '#1baf7a', borderDash: [1, 3], borderWidth: 2, pointRadius: 2, tension: 0.15, hidden: false },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: (ctx) => ctx.dataset.label + ': ' + fmtMoney(ctx.parsed.y) } },
+        },
+        scales: {
+          x: { title: { display: true, text: 'Year' }, grid: { display: false } },
+          y: { title: { display: true, text: 'Net portfolio value' }, grid: { color: '#EDEEF3' }, ticks: { callback: (v) => fmtMoneyShort(v) } },
+        },
+      },
+    });
+  }
+}
+
+Object.values(els).forEach(el => el.addEventListener('input', render));
+
+document.getElementById('advToggle').addEventListener('click', function () {
+  const panel = document.getElementById('advancedPanel');
+  const showing = panel.classList.toggle('show');
+  this.textContent = showing ? 'Hide advanced settings' : 'Show advanced settings';
+});
+
+document.querySelectorAll('.horizon-btn').forEach(btn => {
+  btn.addEventListener('click', function () {
+    document.querySelectorAll('.horizon-btn').forEach(b => b.classList.remove('active'));
+    this.classList.add('active');
+    horizonYears = parseInt(this.dataset.years, 10);
+    render();
+  });
+});
+
+document.querySelectorAll('.legend input[type=checkbox]').forEach(cb => {
+  cb.addEventListener('change', function () {
+    const idx = parseInt(this.dataset.idx, 10);
+    chart.data.datasets[idx].hidden = !this.checked;
+    chart.update();
+  });
+});
+
+render();
+</script>
+
+</body>
+</html>
