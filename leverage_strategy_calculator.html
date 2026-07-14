@@ -199,11 +199,14 @@
 
 <script>
 function fmtMoney(v) {
-  return '$' + Math.round(v).toLocaleString();
+  const sign = v < 0 ? '-' : '';
+  return sign + '$' + Math.round(Math.abs(v)).toLocaleString();
 }
 function fmtMoneyShort(v) {
-  if (Math.abs(v) >= 1000000) return '$' + (v/1000000).toFixed(1) + 'M';
-  return '$' + Math.round(v/1000).toLocaleString() + 'K';
+  const sign = v < 0 ? '-' : '';
+  const abs = Math.abs(v);
+  if (abs >= 1000000) return sign + '$' + (abs/1000000).toFixed(1) + 'M';
+  return sign + '$' + Math.round(abs/1000).toLocaleString() + 'K';
 }
 
 const els = {
