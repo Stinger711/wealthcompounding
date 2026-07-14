@@ -111,7 +111,12 @@
     <h2>Your assumptions</h2>
 
     <div class="field">
-      <label>Current portfolio value <span class="val" id="portfolioValOut">$1,000,000</span></label>
+      <label>Current portfolio value</label>
+      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+        <span style="font-size: 14px; color: var(--text-dark); font-weight: bold;">$</span>
+        <input type="number" id="portfolioValNum" min="100000" max="10000000" step="10000" value="1000000"
+          style="flex: 1; padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; font-family: inherit; font-weight: bold; color: var(--navy);">
+      </div>
       <input type="range" id="portfolioVal" min="100000" max="10000000" step="50000" value="1000000">
     </div>
 
@@ -210,8 +215,9 @@ const els = {
   taxPct: document.getElementById('taxPct'),
 };
 
+const portfolioValNum = document.getElementById('portfolioValNum');
+
 const outs = {
-  portfolioVal: document.getElementById('portfolioValOut'),
   returnPct: document.getElementById('returnOut'),
   interestPct: document.getElementById('interestOut'),
   loanPct: document.getElementById('loanPctOut'),
@@ -272,7 +278,6 @@ function compute() {
 }
 
 function render() {
-  outs.portfolioVal.textContent = fmtMoney(els.portfolioVal.value);
   outs.returnPct.textContent = els.returnPct.value + '%';
   outs.interestPct.textContent = els.interestPct.value + '%';
   outs.loanPct.textContent = els.loanPct.value + '%';
@@ -334,6 +339,28 @@ function render() {
 }
 
 Object.values(els).forEach(el => el.addEventListener('input', render));
+
+els.portfolioVal.addEventListener('input', function () {
+  portfolioValNum.value = this.value;
+});
+
+portfolioValNum.addEventListener('input', function () {
+  let v = parseFloat(this.value);
+  if (isNaN(v)) return;
+  const min = parseFloat(els.portfolioVal.min);
+  const max = parseFloat(els.portfolioVal.max);
+  const clamped = Math.min(max, Math.max(min, v));
+  els.portfolioVal.value = clamped;
+  render();
+});
+
+portfolioValNum.addEventListener('blur', function () {
+  const min = parseFloat(els.portfolioVal.min);
+  const max = parseFloat(els.portfolioVal.max);
+  let v = parseFloat(this.value);
+  if (isNaN(v)) v = min;
+  this.value = Math.min(max, Math.max(min, v));
+});
 
 document.getElementById('advToggle').addEventListener('click', function () {
   const panel = document.getElementById('advancedPanel');
