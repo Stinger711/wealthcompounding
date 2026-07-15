@@ -60,8 +60,7 @@
     font-size: 12px; color: var(--navy); cursor: pointer; text-decoration: underline;
     background: none; border: none; padding: 0; margin-top: 4px; font-family: inherit;
   }
-  .advanced { display: none; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); }
-  .advanced.show { display: block; }
+  .advanced { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); }
   .horizon-group { display: flex; gap: 6px; }
   .horizon-btn {
     flex: 1; padding: 12px 0; min-height: 44px; text-align: center; font-size: 13px; font-weight: bold;
@@ -146,8 +145,8 @@
       </div>
     </div>
 
-    <button class="advanced-toggle" id="advToggle">Show advanced settings</button>
     <div class="advanced" id="advancedPanel">
+      <h2 style="font-size: 13px; margin-bottom: 12px;">Additional settings</h2>
       <div class="field">
         <label>Annual income drawn (% of initial portfolio) <span class="val" id="drawPctOut">5%</span></label>
         <input type="range" id="drawPct" min="1" max="10" step="0.5" value="5">
@@ -363,12 +362,6 @@ portfolioValNum.addEventListener('blur', function () {
   let v = parseFloat(this.value);
   if (isNaN(v)) v = min;
   this.value = Math.min(max, Math.max(min, v));
-});
-
-document.getElementById('advToggle').addEventListener('click', function () {
-  const panel = document.getElementById('advancedPanel');
-  const showing = panel.classList.toggle('show');
-  this.textContent = showing ? 'Hide advanced settings' : 'Show advanced settings';
 });
 
 document.querySelectorAll('.horizon-btn').forEach(btn => {
