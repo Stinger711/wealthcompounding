@@ -2,8 +2,19 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Wealth through Continuous Compounding — Strategy Calculator</title>
+
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#132347">
+<link rel="icon" href="./icon-192.png">
+
+<!-- iOS home screen support -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Compounding">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
   :root {
@@ -98,9 +109,75 @@
     font-size: 11.5px; color: var(--grey); font-style: italic; line-height: 1.5;
     border-top: 1px solid var(--border); padding-top: 14px; margin-top: 8px;
   }
+
+  /* Internal-use warning banner */
+  .warn-banner {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+    background: var(--navy); color: #FFFFFF;
+    padding: 12px 20px; font-size: 13px; text-align: center;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+  .warn-banner strong { color: var(--gold); }
+  .warn-banner.hide { opacity: 0; transform: translateY(-100%); pointer-events: none; }
+  .warn-banner-btn {
+    background: transparent; border: 1px solid #FFFFFF; color: #FFFFFF;
+    border-radius: 6px; padding: 4px 10px; font-size: 11.5px; cursor: pointer;
+    font-family: inherit; flex-shrink: 0;
+  }
+  body { padding-top: 56px; }
+  @media (max-width: 760px) { .warn-banner { font-size: 12px; padding: 10px 12px; } body { padding-top: 70px; } }
+
+  /* Floating terms button (persists after banner disappears) */
+  .terms-fab {
+    position: fixed; bottom: 20px; right: 20px; z-index: 999;
+    background: var(--navy); color: #FFFFFF; border: none; border-radius: 24px;
+    padding: 10px 16px; font-size: 12.5px; font-weight: bold; cursor: pointer;
+    font-family: inherit; box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .terms-fab .dot { width: 16px; height: 16px; border-radius: 50%; background: var(--gold); color: var(--navy); font-size: 11px; font-weight: bold; display: flex; align-items: center; justify-content: center; }
+
+  /* T&Cs modal */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(19,35,71,0.55); z-index: 1001;
+    display: none; align-items: center; justify-content: center; padding: 20px;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal-box {
+    background: #FFFFFF; border-radius: 12px; max-width: 560px; width: 100%;
+    max-height: 80vh; overflow-y: auto; padding: 24px; position: relative;
+  }
+  .modal-box h2 { font-family: Cambria, Georgia, serif; color: var(--navy); font-size: 18px; margin: 0 0 14px; }
+  .modal-box p { font-size: 13px; color: var(--text-dark); line-height: 1.6; margin: 0 0 12px; }
+  .modal-close {
+    position: absolute; top: 16px; right: 16px; background: none; border: none;
+    font-size: 20px; color: var(--grey); cursor: pointer; line-height: 1;
+  }
 </style>
 </head>
 <body>
+
+<div class="warn-banner" id="warnBanner">
+  <span><strong>Internal use only.</strong> Illustrative tool for client discussions — not a system of record.</span>
+  <button class="warn-banner-btn" id="warnBannerBtn" type="button">Terms</button>
+</div>
+
+<button class="terms-fab" id="termsFab" type="button">
+  <span class="dot">i</span> Terms
+</button>
+
+<div class="modal-overlay" id="termsModal">
+  <div class="modal-box">
+    <button class="modal-close" id="modalClose" type="button" aria-label="Close">&times;</button>
+    <h2>Internal Use &amp; Important Information</h2>
+    <p><strong>For internal team use only.</strong> This tool is designed to support client conversations about compounding and leverage concepts. It is not a system of record, not a client-facing quote, and figures shown should not be shared as final numbers without review.</p>
+    <p>Whether loan proceeds are treated as taxable income depends on the client's individual tax position and jurisdiction — this is not a blanket guarantee of tax-free treatment, and should be confirmed with a tax advisor.</p>
+    <p>This tool assumes a constant annual return and a constant facility rate for the full period, which real markets and lenders do not provide — actual outcomes will differ, and leverage increases downside risk as well as upside.</p>
+    <p>The historical return guidance shown reflects long-run averages, not a promised or expected result for any specific portfolio. This tool does not constitute a forecast, quote, or guarantee, and is not financial, tax, or legal advice.</p>
+  </div>
+</div>
 
 <h1>Wealth through Continuous Compounding — Strategy Calculator</h1>
 <p class="subtitle">Adjust the assumptions to see how the strategies compare over time. All figures are illustrative.</p>
@@ -382,6 +459,32 @@ document.querySelectorAll('.legend input[type=checkbox]').forEach(cb => {
 });
 
 render();
+
+// Internal-use warning banner: auto-dismiss after 6 seconds
+const warnBanner = document.getElementById('warnBanner');
+let bannerTimer = setTimeout(() => warnBanner.classList.add('hide'), 6000);
+
+function openTerms() {
+  document.getElementById('termsModal').classList.add('show');
+  clearTimeout(bannerTimer);
+  warnBanner.classList.add('hide');
+}
+document.getElementById('warnBannerBtn').addEventListener('click', openTerms);
+document.getElementById('termsFab').addEventListener('click', openTerms);
+document.getElementById('modalClose').addEventListener('click', () => {
+  document.getElementById('termsModal').classList.remove('show');
+});
+document.getElementById('termsModal').addEventListener('click', (e) => {
+  if (e.target.id === 'termsModal') e.target.classList.remove('show');
+});
+
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js").catch(() => {
+      // Fails silently if not served over https — app still works online.
+    });
+  });
+}
 </script>
 
 </body>

@@ -1,0 +1,17 @@
+{
+  "name": "Wealth through Continuous Compounding",
+  "short_name": "Compounding",
+  "description": "Strategy calculator comparing leverage, borrow-for-income, sell-down, and standard portfolio approaches over time.",
+  "start_url": "./leverage_strategy_calculator.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#FFFFFF",
+  "theme_color": "#132347",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
